@@ -10,6 +10,7 @@ public class StatTrak : IHoldfastSharedMethods
     public List<playerInfo> playerList = new List<playerInfo>();
     public List<blockInfo> blockList = new List<blockInfo>();
     public List<hitInfo> hitList = new List<hitInfo>();
+    public List<hitInfo> tradeList = new List<hitInfo>();
     public float timeelapsed;
     public float assistTime = 10.0f;
 
@@ -33,12 +34,13 @@ public class StatTrak : IHoldfastSharedMethods
     {
         public int attackerHitId;
         public int victimHitId;
+        public float timeval;
     }
 
     public void OnPlayerJoined(int playerId, ulong steamId, string name, string regimentTag, bool isBot)
     {
         playerInfo newPlayer = new playerInfo();
-        int[] kd = { 0, 0, 0, 0, 0, 0, 0 }; //Kills_Deaths_Assists_TKs_Blocks_Score_Impact
+        int[] kd = { 0, 0, 0, 0, 0, 0, 0, 0 }; //Kills_Deaths_Assists_TKs_Blocks_Score_Impact_TradeAssists
 
         newPlayer.pId = playerId;
         newPlayer.pSId = steamId;
@@ -79,6 +81,19 @@ public class StatTrak : IHoldfastSharedMethods
         int attackerBlockId = 0;
         int defenderBlockId = 0;
         int attackerHitId = 0;
+        int attackerTradeId = 0;
+
+        Debug.Log("Kill registered");
+        hitInfo newTrade = new hitInfo();
+
+        newTrade.attackerHitId = killerPlayerId;
+        newTrade.victimHitId = victimPlayerId;
+        newTrade.timeval = timeelapsed;
+        Debug.Log("NewTrade Info added.");
+
+        tradeList.Add(newTrade);
+
+        Debug.Log("New Trade Added: Info is " + killerPlayerId + " " + victimPlayerId + " " + timeelapsed);
 
         for (int x = 0; x < playerList.Count; x++)
         {
@@ -93,30 +108,47 @@ public class StatTrak : IHoldfastSharedMethods
             }
         }
 
-        for (int k = 0; k < hitList.Count; k++)
+        if(hitList.Count != 0)
         {
-            if (hitList[k].victimHitId == victimPlayerId)
+            for (int k = 0; k < hitList.Count; k++)
             {
-                attackerHitId = hitList[k].attackerHitId;
-                break;
+                if (hitList[k].victimHitId == victimPlayerId)
+                {
+                    attackerHitId = hitList[k].attackerHitId;
+                    break;
+                }
             }
         }
 
-        for (int y = 0; y < blockList.Count; y++)
+        Debug.Log(tradeList.Count);
+        if (tradeList.Count != 0)
         {
-            if (blockList[y].attackerBlockId == victimPlayerId)
+            for (int l = 0; l < tradeList.Count; l++)
             {
-                defenderBlockId = blockList[y].defenderBlockId;
-                Debug.Log(defenderBlockId);
-            }
-
-            if (blockList[y].defenderBlockId == victimPlayerId)
-            {
-                attackerBlockId = blockList[y].attackerBlockId;
-                Debug.Log(attackerBlockId);
+                if (tradeList[l].victimHitId == victimPlayerId)
+                {
+                    attackerTradeId = tradeList[l].attackerHitId;
+                }
             }
         }
 
+        if(blockList.Count != 0)
+        {
+            for (int y = 0; y < blockList.Count; y++)
+            {
+                if (blockList[y].attackerBlockId == victimPlayerId)
+                {
+                    defenderBlockId = blockList[y].defenderBlockId;
+                    Debug.Log(defenderBlockId);
+                }
+
+                if (blockList[y].defenderBlockId == victimPlayerId)
+                {
+                    attackerBlockId = blockList[y].attackerBlockId;
+                    Debug.Log(attackerBlockId);
+                }
+            }
+        }
 
         if (playerList[killerPos].faction == playerList[victimPos].faction)
         {
@@ -140,14 +172,19 @@ public class StatTrak : IHoldfastSharedMethods
                 {
                     playerList[j].KDA[2] += 1;
                 }
+
+                if ((playerList[j].pId == attackerTradeId) && (attackerTradeId != killerPlayerId))
+                {
+                    playerList[j].KDA[7] += 1;
+                }
             }
 
             playerList[killerPos].KDA[0] += 1;
             playerList[victimPos].KDA[1] += 1;
         }
 
-        Debug.Log("Killer KDA: " + playerList[killerPos].KDA[0] + "|" + playerList[killerPos].KDA[1] + "|" + playerList[killerPos].KDA[2] + "|" + playerList[killerPos].KDA[3] + "|" + playerList[killerPos].KDA[4]);
-        Debug.Log("Victim KDA: " + playerList[victimPos].KDA[0] + "|" + playerList[victimPos].KDA[1] + "|" + playerList[victimPos].KDA[2] + "|" + playerList[victimPos].KDA[3] + "|" + playerList[victimPos].KDA[4]);
+        Debug.Log("Killer KDA: " + playerList[killerPos].KDA[0] + "|" + playerList[killerPos].KDA[1] + "|" + playerList[killerPos].KDA[2] + "|" + playerList[killerPos].KDA[3] + "|" + playerList[killerPos].KDA[4] + "|" + playerList[killerPos].KDA[7]);
+        Debug.Log("Victim KDA: " + playerList[victimPos].KDA[0] + "|" + playerList[victimPos].KDA[1] + "|" + playerList[victimPos].KDA[2] + "|" + playerList[victimPos].KDA[3] + "|" + playerList[victimPos].KDA[4] + "|" + playerList[killerPos].KDA[7]);
     }
 
     public void OnPlayerBlock(int attackingPlayerId, int defendingPlayerId)
@@ -161,7 +198,7 @@ public class StatTrak : IHoldfastSharedMethods
                 newblock.attackerBlockId = attackingPlayerId;
                 newblock.defenderBlockId = defendingPlayerId;
                 newblock.timeval = timeelapsed;
-
+                
                 blockList.Add(newblock);
 
                 playerList[x].KDA[4] += 1;
@@ -182,28 +219,50 @@ public class StatTrak : IHoldfastSharedMethods
                 blockList.Remove(blockList[x]);
             }
         }
+
+        for (int x = 0; x < tradeList.Count; x++)
+        {
+            if ((tradeList[x].timeval + assistTime) <= time)
+            {
+                tradeList.Remove(tradeList[x]);
+            }
+        }
     }
 
     public void OnScorableAction(int playerId, int score, ScorableActionType reason)
     {
-        Debug.Log("Scorable Action Player Id: " + playerId + " Score Gained: " + score + " Reason: " + reason);
-
-        hitInfo newHit = new hitInfo();
-
         if (reason.ToString() == "PlayerWoundedPlayer")
         {
+            hitInfo newHit = new hitInfo();
+            hitInfo tradeHit = new hitInfo();
+
+            Debug.Log("In if statement");
             newHit.attackerHitId = playerId;
             newHit.victimHitId = 0;
+            newHit.timeval = 0.0f;
+            Debug.Log("Info added");
 
             hitList.Add(newHit);
+            Debug.Log("Hit added");
+
+            /**tradeHit.attackerHitId = playerId;
+            tradeHit.victimHitId = 0;
+            tradeHit.timeval = timeelapsed;
+
+            tradeList.Add(tradeHit);
+
+            Debug.Log("NewHit added. Id: " + hitList.Count + " NewTrade added. Id: " + tradeList.Count);
+            Debug.Log(reason);*/
         }
     }
 
     public void OnPlayerHurt(int playerId, byte oldHp, byte newHp, EntityHealthChangedReason reason)
     {
-        Debug.Log("Scorable Action Player Id: " + playerId + " Reason: " + reason);
+        //Debug.Log("Scorable Action Player Id: " + playerId + " Reason: " + reason);
 
+        Debug.Log("Old HP: " + newHp + " New HP: " + newHp);
         hitList[hitList.Count - 1].victimHitId = playerId;
+        tradeList[tradeList.Count - 1].victimHitId = playerId;
     }
 
     public void OnIsClient(bool client, ulong steamId)
