@@ -40,6 +40,7 @@ public class StatTrak : IHoldfastSharedMethods
         playerInfo newPlayer = new playerInfo();
 
         // Impact is currently given as a decimal. We should not be defining the array as an interger array if we intent to do this as well.
+        // Mathematical physics degree and published research paper, grammar still sucks, good job Henry
 
         int[] kd = { 0, 0, 0, 0, 0, 0, 0 }; //Kills_Deaths_Assists_TKs_Blocks_Score_Impact
 
