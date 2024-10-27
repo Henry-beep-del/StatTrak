@@ -38,6 +38,9 @@ public class StatTrak : IHoldfastSharedMethods
     public void OnPlayerJoined(int playerId, ulong steamId, string name, string regimentTag, bool isBot)
     {
         playerInfo newPlayer = new playerInfo();
+
+        // Impact is currently given as a decimal. We should not be defining the array as an interger array if we intent to do this as well.
+
         int[] kd = { 0, 0, 0, 0, 0, 0, 0 }; //Kills_Deaths_Assists_TKs_Blocks_Score_Impact
 
         newPlayer.pId = playerId;
@@ -49,9 +52,11 @@ public class StatTrak : IHoldfastSharedMethods
         playerList.Add(newPlayer);
     }
 
+    // Is there a different between PlayerClass and playerClass? This is going to get really confusing really fast.
+
     public void OnPlayerSpawned(int playerId, int spawnSectionId, FactionCountry playerFaction, PlayerClass playerClass, int uniformId, GameObject playerObject)
     {
-        for (int x = 0; x < playerList.Count; x++)
+        for (int x = 0; x < playerList.Count; x++) 
         {
             if (playerList[x].pId == playerId)
             {
@@ -80,11 +85,13 @@ public class StatTrak : IHoldfastSharedMethods
         int defenderBlockId = 0;
         int attackerHitId = 0;
 
+        // Wondering if array.exists could make this faster?
+
         for (int x = 0; x < playerList.Count; x++)
         {
-            if (playerList[x].pId == killerPlayerId)
+            if (playerList[x].pId == killerPlayerId) // We're already looping here, use an if-else statement, these should be mutually exclusive. 
             {
-                killerPos = x;
+                killerPos = x; 
             }
 
             if (playerList[x].pId == victimPlayerId)
@@ -104,7 +111,7 @@ public class StatTrak : IHoldfastSharedMethods
 
         for (int y = 0; y < blockList.Count; y++)
         {
-            if (blockList[y].attackerBlockId == victimPlayerId)
+            if (blockList[y].attackerBlockId == victimPlayerId) // If-else here too...
             {
                 defenderBlockId = blockList[y].defenderBlockId;
                 Debug.Log(defenderBlockId);
@@ -126,7 +133,7 @@ public class StatTrak : IHoldfastSharedMethods
         {
             for (int j = 0; j < playerList.Count; j++)
             {
-                if (playerList[j].pId == attackerBlockId)
+                if (playerList[j].pId == attackerBlockId) // Need an if-else here as well.
                 {
                     playerList[j].KDA[2] += 1;
                 }
